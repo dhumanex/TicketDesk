@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -27,33 +26,15 @@ public class GlobalExceptionHandler {
     private static final Logger logger =
             LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    @ExceptionHandler(InvalidTicketStatusTransitionException.class)
-    public ResponseEntity<ApiErrorResponse> handleInvalidStatusTransition(
-            InvalidTicketStatusTransitionException exception,
-            HttpServletRequest request) {
-
-        ApiErrorResponse response = new ApiErrorResponse(
-                HttpStatus.CONFLICT.value(),
-                HttpStatus.CONFLICT.getReasonPhrase(),
-                exception.getMessage(),
-                LocalDateTime.now(),
-                request.getRequestURI()
-        );
-
-        return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(response);
-    }
-
     @ExceptionHandler(TicketNotFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleTicketNotFound(
-            TicketNotFoundException exception,
+            TicketNotFoundException ex,
             HttpServletRequest request) {
 
         ApiErrorResponse response = new ApiErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
-                HttpStatus.NOT_FOUND.getReasonPhrase(),
-                exception.getMessage(),
+                "Not Found",
+                ex.getMessage(),
                 LocalDateTime.now(),
                 request.getRequestURI()
         );
@@ -63,24 +44,80 @@ public class GlobalExceptionHandler {
                 .body(response);
     }
 
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleUserNotFound(
+            UserNotFoundException ex,
+            HttpServletRequest request) {
+
+        ApiErrorResponse response = new ApiErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                "Not Found",
+                ex.getMessage(),
+                LocalDateTime.now(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(response);
+    }
+
+    @ExceptionHandler(InvalidTicketStatusTransitionException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidTicketStatusTransition(
+            InvalidTicketStatusTransitionException ex,
+            HttpServletRequest request) {
+
+        ApiErrorResponse response = new ApiErrorResponse(
+                HttpStatus.CONFLICT.value(),
+                "Conflict",
+                ex.getMessage(),
+                LocalDateTime.now(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(response);
+    }
+
+    @ExceptionHandler(EmailAlreadyExistsException.class)
+    public ResponseEntity<ApiErrorResponse> handleEmailAlreadyExists(
+            EmailAlreadyExistsException ex,
+            HttpServletRequest request) {
+
+        ApiErrorResponse response = new ApiErrorResponse(
+                HttpStatus.CONFLICT.value(),
+                "Conflict",
+                ex.getMessage(),
+                LocalDateTime.now(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(response);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ValidationErrorResponse> handleValidationErrors(
-            MethodArgumentNotValidException exception,
+            MethodArgumentNotValidException ex,
             HttpServletRequest request) {
 
         Map<String, String> fields = new LinkedHashMap<>();
 
-        for (FieldError fieldError : exception.getBindingResult().getFieldErrors()) {
-            fields.put(
-                    fieldError.getField(),
-                    fieldError.getDefaultMessage()
-            );
-        }
+        ex.getBindingResult()
+                .getFieldErrors()
+                .forEach(error ->
+                        fields.put(
+                                error.getField(),
+                                error.getDefaultMessage()
+                        )
+                );
 
         ValidationErrorResponse response = new ValidationErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
-                "Validation Failed",
-                "Los datos enviados no son válidos",
+                "Bad Request",
+                "La petición contiene datos no válidos",
                 LocalDateTime.now(),
                 request.getRequestURI(),
                 fields
@@ -93,12 +130,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiErrorResponse> handleHttpMessageNotReadable(
-            HttpMessageNotReadableException exception,
+            HttpMessageNotReadableException ex,
             HttpServletRequest request) {
 
         ApiErrorResponse response = new ApiErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
-                HttpStatus.BAD_REQUEST.getReasonPhrase(),
+                "Bad Request",
                 "El cuerpo de la petición contiene datos no válidos o no se puede interpretar",
                 LocalDateTime.now(),
                 request.getRequestURI()
@@ -111,13 +148,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ApiErrorResponse> handleTypeMismatch(
-            MethodArgumentTypeMismatchException exception,
+            MethodArgumentTypeMismatchException ex,
             HttpServletRequest request) {
 
         ApiErrorResponse response = new ApiErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
-                HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                "El parámetro '" + exception.getName() + "' tiene un formato no válido",
+                "Bad Request",
+                "El parámetro de la petición tiene un formato no válido",
                 LocalDateTime.now(),
                 request.getRequestURI()
         );
@@ -129,12 +166,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleNoResourceFound(
-            NoResourceFoundException exception,
+            NoResourceFoundException ex,
             HttpServletRequest request) {
 
         ApiErrorResponse response = new ApiErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
-                HttpStatus.NOT_FOUND.getReasonPhrase(),
+                "Not Found",
                 "El recurso solicitado no existe",
                 LocalDateTime.now(),
                 request.getRequestURI()
@@ -147,19 +184,19 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleUnexpectedException(
-            Exception exception,
+            Exception ex,
             HttpServletRequest request) {
 
         logger.error(
                 "Error inesperado procesando {}",
                 request.getRequestURI(),
-                exception
+                ex
         );
 
         ApiErrorResponse response = new ApiErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
-                "Se ha producido un error interno inesperado",
+                "Internal Server Error",
+                "Se ha producido un error interno",
                 LocalDateTime.now(),
                 request.getRequestURI()
         );
@@ -168,22 +205,4 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(response);
     }
-
-    @ExceptionHandler(UserNotFoundException.class)
-public ResponseEntity<ApiErrorResponse> handleUserNotFound(
-        UserNotFoundException ex,
-        HttpServletRequest request) {
-
-    ApiErrorResponse response = new ApiErrorResponse(
-            HttpStatus.NOT_FOUND.value(),
-            "Not Found",
-            ex.getMessage(),
-            LocalDateTime.now(),
-            request.getRequestURI()
-    );
-
-    return ResponseEntity
-            .status(HttpStatus.NOT_FOUND)
-            .body(response);
-}
 }
