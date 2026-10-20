@@ -168,4 +168,22 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(response);
     }
+
+    @ExceptionHandler(UserNotFoundException.class)
+public ResponseEntity<ApiErrorResponse> handleUserNotFound(
+        UserNotFoundException ex,
+        HttpServletRequest request) {
+
+    ApiErrorResponse response = new ApiErrorResponse(
+            HttpStatus.NOT_FOUND.value(),
+            "Not Found",
+            ex.getMessage(),
+            LocalDateTime.now(),
+            request.getRequestURI()
+    );
+
+    return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(response);
+}
 }
