@@ -69,7 +69,8 @@ public class TicketController {
         Ticket ticket = ticketService.create(
                 request.title(),
                 request.description(),
-                request.priority()
+                request.priority(),
+                request.requesterId()
         );
 
         TicketResponse response = toResponse(ticket);

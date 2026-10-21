@@ -9,9 +9,12 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -38,6 +41,14 @@ public class Ticket {
     @Column(nullable = false, length = 20)
     private TicketPriority priority = TicketPriority.MEDIUM;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "requester_id")
+    private User requester;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assignee_id")
+    private User assignee;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -47,14 +58,31 @@ public class Ticket {
     protected Ticket() {
     }
 
-    public Ticket(String title, String description, TicketPriority priority) {
+    public Ticket(
+            String title,
+            String description,
+            TicketPriority priority) {
+
         this.title = title;
         this.description = description;
         this.priority = priority;
     }
 
+    public Ticket(
+            String title,
+            String description,
+            TicketPriority priority,
+            User requester) {
+
+        this.title = title;
+        this.description = description;
+        this.priority = priority;
+        this.requester = requester;
+    }
+
     @PrePersist
     protected void onCreate() {
+
         if (status == null) {
             status = TicketStatus.OPEN;
         }
@@ -106,6 +134,14 @@ public class Ticket {
 
     public void setPriority(TicketPriority priority) {
         this.priority = priority;
+    }
+
+    public User getRequester() {
+        return requester;
+    }
+
+    public User getAssignee() {
+        return assignee;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -9,21 +9,17 @@ import jakarta.validation.constraints.Size;
 public record CreateTicketRequest(
 
         @NotBlank(message = "El título es obligatorio")
-        @Size(
-                max = 150,
-                message = "El título no puede superar los 150 caracteres"
-        )
+        @Size(max = 150, message = "El título no puede superar los 150 caracteres")
         String title,
 
         @NotBlank(message = "La descripción es obligatoria")
-        @Size(
-                max = 4000,
-                message = "La descripción no puede superar los 4000 caracteres"
-        )
+        @Size(max = 4000, message = "La descripción no puede superar los 4000 caracteres")
         String description,
 
         @NotNull(message = "La prioridad es obligatoria")
-        TicketPriority priority
+        TicketPriority priority,
 
+        @NotNull(message = "El solicitante es obligatorio")
+        Long requesterId
 ) {
 }

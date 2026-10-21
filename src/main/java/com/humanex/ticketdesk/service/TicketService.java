@@ -7,12 +7,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.humanex.ticketdesk.entity.Ticket;
 import com.humanex.ticketdesk.entity.TicketStatusHistory;
+import com.humanex.ticketdesk.entity.User;
 import com.humanex.ticketdesk.enums.TicketPriority;
 import com.humanex.ticketdesk.enums.TicketStatus;
 import com.humanex.ticketdesk.exception.InvalidTicketStatusTransitionException;
 import com.humanex.ticketdesk.exception.TicketNotFoundException;
+import com.humanex.ticketdesk.exception.UserNotFoundException;
 import com.humanex.ticketdesk.repository.TicketRepository;
 import com.humanex.ticketdesk.repository.TicketStatusHistoryRepository;
+import com.humanex.ticketdesk.repository.UserRepository;
 
 @Service
 @Transactional(readOnly = true)
@@ -20,13 +23,16 @@ public class TicketService {
 
     private final TicketRepository ticketRepository;
     private final TicketStatusHistoryRepository ticketStatusHistoryRepository;
+    private final UserRepository userRepository;
 
     public TicketService(
             TicketRepository ticketRepository,
-            TicketStatusHistoryRepository ticketStatusHistoryRepository) {
+            TicketStatusHistoryRepository ticketStatusHistoryRepository,
+            UserRepository userRepository) {
 
         this.ticketRepository = ticketRepository;
         this.ticketStatusHistoryRepository = ticketStatusHistoryRepository;
+        this.userRepository = userRepository;
     }
 
     public List<Ticket> findAll() {
@@ -40,13 +46,13 @@ public class TicketService {
 
     public List<TicketStatusHistory> findHistoryByTicketId(Long ticketId) {
 
-    if (!ticketRepository.existsById(ticketId)) {
-        throw new TicketNotFoundException(ticketId);
-    }
+        if (!ticketRepository.existsById(ticketId)) {
+            throw new TicketNotFoundException(ticketId);
+        }
 
-    return ticketStatusHistoryRepository
-            .findByTicket_IdOrderByChangedAtAsc(ticketId);
-}
+        return ticketStatusHistoryRepository
+                .findByTicket_IdOrderByChangedAtAsc(ticketId);
+    }
 
     @Transactional
     public Ticket create(
@@ -58,6 +64,26 @@ public class TicketService {
                 title,
                 description,
                 priority
+        );
+
+        return ticketRepository.save(ticket);
+    }
+
+    @Transactional
+    public Ticket create(
+            String title,
+            String description,
+            TicketPriority priority,
+            Long requesterId) {
+
+        User requester = userRepository.findById(requesterId)
+                .orElseThrow(() -> new UserNotFoundException(requesterId));
+
+        Ticket ticket = new Ticket(
+                title,
+                description,
+                priority,
+                requester
         );
 
         return ticketRepository.save(ticket);
