@@ -32,11 +32,13 @@ public class UserService {
     }
 
     public User findById(Long id) {
+
         return userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
     }
 
     public User findByEmail(String email) {
+
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException(email));
     }
@@ -52,7 +54,8 @@ public class UserService {
             throw new EmailAlreadyExistsException(email);
         }
 
-        String passwordHash = passwordEncoder.encode(password);
+        String passwordHash =
+                passwordEncoder.encode(password);
 
         User user = new User(
                 name,
@@ -62,5 +65,16 @@ public class UserService {
         );
 
         return userRepository.save(user);
+    }
+
+    @Transactional
+    public User disable(Long id) {
+
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException(id));
+
+        user.disable();
+
+        return user;
     }
 }

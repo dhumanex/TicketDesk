@@ -68,7 +68,6 @@ public class User {
         }
 
         enabled = true;
-
         createdAt = LocalDateTime.now();
         updatedAt = createdAt;
     }
@@ -76,6 +75,14 @@ public class User {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    public void disable() {
+        this.enabled = false;
+    }
+
+    public void enable() {
+        this.enabled = true;
     }
 
     public Long getId() {
