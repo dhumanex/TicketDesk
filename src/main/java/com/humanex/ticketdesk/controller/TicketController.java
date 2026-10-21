@@ -16,8 +16,10 @@ import com.humanex.ticketdesk.dto.CreateTicketRequest;
 import com.humanex.ticketdesk.dto.TicketResponse;
 import com.humanex.ticketdesk.dto.TicketStatusHistoryResponse;
 import com.humanex.ticketdesk.dto.UpdateTicketStatusRequest;
+import com.humanex.ticketdesk.dto.UserSummaryResponse;
 import com.humanex.ticketdesk.entity.Ticket;
 import com.humanex.ticketdesk.entity.TicketStatusHistory;
+import com.humanex.ticketdesk.entity.User;
 import com.humanex.ticketdesk.service.TicketService;
 
 import jakarta.validation.Valid;
@@ -107,8 +109,24 @@ public class TicketController {
                 ticket.getDescription(),
                 ticket.getStatus(),
                 ticket.getPriority(),
+                toUserSummary(ticket.getRequester()),
+                toUserSummary(ticket.getAssignee()),
                 ticket.getCreatedAt(),
                 ticket.getUpdatedAt()
+        );
+    }
+
+    private UserSummaryResponse toUserSummary(User user) {
+
+        if (user == null) {
+            return null;
+        }
+
+        return new UserSummaryResponse(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getRole()
         );
     }
 
