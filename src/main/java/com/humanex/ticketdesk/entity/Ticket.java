@@ -100,6 +100,10 @@ public class Ticket {
         updatedAt = LocalDateTime.now();
     }
 
+    public void assignTo(User assignee) {
+        this.assignee = assignee;
+    }
+
     public Long getId() {
         return id;
     }

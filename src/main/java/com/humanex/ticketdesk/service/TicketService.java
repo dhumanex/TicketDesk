@@ -10,6 +10,8 @@ import com.humanex.ticketdesk.entity.TicketStatusHistory;
 import com.humanex.ticketdesk.entity.User;
 import com.humanex.ticketdesk.enums.TicketPriority;
 import com.humanex.ticketdesk.enums.TicketStatus;
+import com.humanex.ticketdesk.enums.UserRole;
+import com.humanex.ticketdesk.exception.InvalidAssigneeRoleException;
 import com.humanex.ticketdesk.exception.InvalidTicketStatusTransitionException;
 import com.humanex.ticketdesk.exception.TicketNotFoundException;
 import com.humanex.ticketdesk.exception.UserNotFoundException;
@@ -40,6 +42,7 @@ public class TicketService {
     }
 
     public Ticket findById(Long id) {
+
         return ticketRepository.findById(id)
                 .orElseThrow(() -> new TicketNotFoundException(id));
     }
@@ -90,7 +93,30 @@ public class TicketService {
     }
 
     @Transactional
-    public Ticket updateStatus(Long id, TicketStatus newStatus) {
+    public Ticket assign(Long ticketId, Long assigneeId) {
+
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new TicketNotFoundException(ticketId));
+
+        User assignee = userRepository.findById(assigneeId)
+                .orElseThrow(() -> new UserNotFoundException(assigneeId));
+
+        if (assignee.getRole() != UserRole.TECHNICIAN) {
+            throw new InvalidAssigneeRoleException(
+                    assignee.getId(),
+                    assignee.getRole()
+            );
+        }
+
+        ticket.assignTo(assignee);
+
+        return ticket;
+    }
+
+    @Transactional
+    public Ticket updateStatus(
+            Long id,
+            TicketStatus newStatus) {
 
         Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new TicketNotFoundException(id));
@@ -129,16 +155,16 @@ public class TicketService {
 
         return switch (currentStatus) {
             case OPEN ->
-                    newStatus == TicketStatus.IN_PROGRESS;
+                newStatus == TicketStatus.IN_PROGRESS;
 
             case IN_PROGRESS ->
-                    newStatus == TicketStatus.RESOLVED;
+                newStatus == TicketStatus.RESOLVED;
 
             case RESOLVED ->
-                    newStatus == TicketStatus.CLOSED;
+                newStatus == TicketStatus.CLOSED;
 
             case CLOSED ->
-                    false;
+                false;
         };
     }
 }

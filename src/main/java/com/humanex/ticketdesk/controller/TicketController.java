@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.humanex.ticketdesk.dto.AssignTicketRequest;
 import com.humanex.ticketdesk.dto.CreateTicketRequest;
 import com.humanex.ticketdesk.dto.TicketResponse;
 import com.humanex.ticketdesk.dto.TicketStatusHistoryResponse;
@@ -84,6 +85,21 @@ public class TicketController {
         return ResponseEntity
                 .created(location)
                 .body(response);
+    }
+
+    @PatchMapping("/{id}/assignee")
+    public ResponseEntity<TicketResponse> assign(
+            @PathVariable Long id,
+            @Valid @RequestBody AssignTicketRequest request) {
+
+        Ticket ticket = ticketService.assign(
+                id,
+                request.assigneeId()
+        );
+
+        return ResponseEntity.ok(
+                toResponse(ticket)
+        );
     }
 
     @PatchMapping("/{id}/status")

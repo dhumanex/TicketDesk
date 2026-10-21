@@ -1,7 +1,7 @@
 package com.humanex.ticketdesk.exception;
 
 import java.time.LocalDateTime;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -33,7 +33,7 @@ public class GlobalExceptionHandler {
 
         ApiErrorResponse response = new ApiErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
-                "Not Found",
+                HttpStatus.NOT_FOUND.getReasonPhrase(),
                 ex.getMessage(),
                 LocalDateTime.now(),
                 request.getRequestURI()
@@ -51,7 +51,7 @@ public class GlobalExceptionHandler {
 
         ApiErrorResponse response = new ApiErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
-                "Not Found",
+                HttpStatus.NOT_FOUND.getReasonPhrase(),
                 ex.getMessage(),
                 LocalDateTime.now(),
                 request.getRequestURI()
@@ -63,13 +63,13 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(InvalidTicketStatusTransitionException.class)
-    public ResponseEntity<ApiErrorResponse> handleInvalidTicketStatusTransition(
+    public ResponseEntity<ApiErrorResponse> handleInvalidStatusTransition(
             InvalidTicketStatusTransitionException ex,
             HttpServletRequest request) {
 
         ApiErrorResponse response = new ApiErrorResponse(
                 HttpStatus.CONFLICT.value(),
-                "Conflict",
+                HttpStatus.CONFLICT.getReasonPhrase(),
                 ex.getMessage(),
                 LocalDateTime.now(),
                 request.getRequestURI()
@@ -87,7 +87,25 @@ public class GlobalExceptionHandler {
 
         ApiErrorResponse response = new ApiErrorResponse(
                 HttpStatus.CONFLICT.value(),
-                "Conflict",
+                HttpStatus.CONFLICT.getReasonPhrase(),
+                ex.getMessage(),
+                LocalDateTime.now(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(response);
+    }
+
+    @ExceptionHandler(InvalidAssigneeRoleException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidAssigneeRole(
+            InvalidAssigneeRoleException ex,
+            HttpServletRequest request) {
+
+        ApiErrorResponse response = new ApiErrorResponse(
+                HttpStatus.CONFLICT.value(),
+                HttpStatus.CONFLICT.getReasonPhrase(),
                 ex.getMessage(),
                 LocalDateTime.now(),
                 request.getRequestURI()
@@ -103,7 +121,7 @@ public class GlobalExceptionHandler {
             MethodArgumentNotValidException ex,
             HttpServletRequest request) {
 
-        Map<String, String> fields = new LinkedHashMap<>();
+        Map<String, String> fields = new HashMap<>();
 
         ex.getBindingResult()
                 .getFieldErrors()
@@ -114,35 +132,36 @@ public class GlobalExceptionHandler {
                         )
                 );
 
-        ValidationErrorResponse response = new ValidationErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                "Bad Request",
-                "La petición contiene datos no válidos",
-                LocalDateTime.now(),
-                request.getRequestURI(),
-                fields
-        );
+        ValidationErrorResponse response =
+                new ValidationErrorResponse(
+                        HttpStatus.BAD_REQUEST.value(),
+                        HttpStatus.BAD_REQUEST.getReasonPhrase(),
+                        "La petición contiene datos no válidos",
+                        LocalDateTime.now(),
+                        request.getRequestURI(),
+                        fields
+                );
 
         return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
+                .badRequest()
                 .body(response);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ApiErrorResponse> handleHttpMessageNotReadable(
+    public ResponseEntity<ApiErrorResponse> handleUnreadableMessage(
             HttpMessageNotReadableException ex,
             HttpServletRequest request) {
 
         ApiErrorResponse response = new ApiErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
-                "Bad Request",
-                "El cuerpo de la petición contiene datos no válidos o no se puede interpretar",
+                HttpStatus.BAD_REQUEST.getReasonPhrase(),
+                "El cuerpo de la petición no es válido",
                 LocalDateTime.now(),
                 request.getRequestURI()
         );
 
         return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
+                .badRequest()
                 .body(response);
     }
 
@@ -153,14 +172,15 @@ public class GlobalExceptionHandler {
 
         ApiErrorResponse response = new ApiErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
-                "Bad Request",
-                "El parámetro de la petición tiene un formato no válido",
+                HttpStatus.BAD_REQUEST.getReasonPhrase(),
+                "El valor proporcionado para '" + ex.getName()
+                        + "' no tiene el formato esperado",
                 LocalDateTime.now(),
                 request.getRequestURI()
         );
 
         return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
+                .badRequest()
                 .body(response);
     }
 
@@ -171,7 +191,7 @@ public class GlobalExceptionHandler {
 
         ApiErrorResponse response = new ApiErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
-                "Not Found",
+                HttpStatus.NOT_FOUND.getReasonPhrase(),
                 "El recurso solicitado no existe",
                 LocalDateTime.now(),
                 request.getRequestURI()
@@ -183,20 +203,20 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiErrorResponse> handleUnexpectedException(
+    public ResponseEntity<ApiErrorResponse> handleGenericException(
             Exception ex,
             HttpServletRequest request) {
 
         logger.error(
-                "Error inesperado procesando {}",
+                "Error interno no controlado en {}",
                 request.getRequestURI(),
                 ex
         );
 
         ApiErrorResponse response = new ApiErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "Internal Server Error",
-                "Se ha producido un error interno",
+                HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
+                "Ha ocurrido un error interno en el servidor",
                 LocalDateTime.now(),
                 request.getRequestURI()
         );
