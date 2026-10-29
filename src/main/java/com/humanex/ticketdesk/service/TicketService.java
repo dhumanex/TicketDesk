@@ -83,6 +83,12 @@ public class TicketService {
         User requester = userRepository.findById(requesterId)
                 .orElseThrow(() -> new UserNotFoundException(requesterId));
 
+        if (!requester.isEnabled()) {
+            throw new UserDisabledException(
+                    requester.getId()
+            );
+        }
+
         Ticket ticket = new Ticket(
                 title,
                 description,
