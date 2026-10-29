@@ -14,6 +14,7 @@ import com.humanex.ticketdesk.enums.UserRole;
 import com.humanex.ticketdesk.exception.InvalidAssigneeRoleException;
 import com.humanex.ticketdesk.exception.InvalidTicketStatusTransitionException;
 import com.humanex.ticketdesk.exception.TicketNotFoundException;
+import com.humanex.ticketdesk.exception.UserDisabledException;
 import com.humanex.ticketdesk.exception.UserNotFoundException;
 import com.humanex.ticketdesk.repository.TicketRepository;
 import com.humanex.ticketdesk.repository.TicketStatusHistoryRepository;
@@ -105,6 +106,12 @@ public class TicketService {
             throw new InvalidAssigneeRoleException(
                     assignee.getId(),
                     assignee.getRole()
+            );
+        }
+
+        if (!assignee.isEnabled()) {
+            throw new UserDisabledException(
+                    assignee.getId()
             );
         }
 
