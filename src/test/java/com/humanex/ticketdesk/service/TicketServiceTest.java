@@ -1,5 +1,6 @@
 package com.humanex.ticketdesk.service;
 
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -13,10 +14,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.humanex.ticketdesk.entity.Ticket;
+import com.humanex.ticketdesk.entity.TicketStatusHistory;
 import com.humanex.ticketdesk.entity.User;
 import com.humanex.ticketdesk.enums.TicketPriority;
+import com.humanex.ticketdesk.enums.TicketStatus;
 import com.humanex.ticketdesk.enums.UserRole;
 import com.humanex.ticketdesk.exception.InvalidAssigneeRoleException;
+import com.humanex.ticketdesk.exception.InvalidTicketStatusTransitionException;
 import com.humanex.ticketdesk.exception.UserDisabledException;
 import com.humanex.ticketdesk.repository.TicketRepository;
 import com.humanex.ticketdesk.repository.TicketStatusHistoryRepository;
@@ -159,5 +163,60 @@ class TicketServiceTest {
 
         verify(ticket)
                 .assignTo(technician);
+    }
+
+    @Test
+    void shouldUpdateStatusFromOpenToInProgress() {
+
+        Long ticketId = 4L;
+
+        Ticket ticket = mock(Ticket.class);
+
+        when(ticketRepository.findById(ticketId))
+                .thenReturn(Optional.of(ticket));
+
+        when(ticket.getStatus())
+                .thenReturn(TicketStatus.OPEN);
+
+        Ticket result = ticketService.updateStatus(
+                ticketId,
+                TicketStatus.IN_PROGRESS
+        );
+
+        verify(ticket)
+                .setStatus(TicketStatus.IN_PROGRESS);
+
+        verify(ticketStatusHistoryRepository)
+                .save(any(TicketStatusHistory.class));
+
+        assertSame(ticket, result);
+    }
+
+    @Test
+    void shouldRejectInvalidStatusTransition() {
+
+        Long ticketId = 4L;
+
+        Ticket ticket = mock(Ticket.class);
+
+        when(ticketRepository.findById(ticketId))
+                .thenReturn(Optional.of(ticket));
+
+        when(ticket.getStatus())
+                .thenReturn(TicketStatus.OPEN);
+
+        assertThrows(
+                InvalidTicketStatusTransitionException.class,
+                () -> ticketService.updateStatus(
+                        ticketId,
+                        TicketStatus.RESOLVED
+                )
+        );
+
+        verify(ticket, never())
+                .setStatus(any(TicketStatus.class));
+
+        verify(ticketStatusHistoryRepository, never())
+                .save(any(TicketStatusHistory.class));
     }
 }
