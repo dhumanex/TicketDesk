@@ -62,6 +62,24 @@ public class GlobalExceptionHandler {
                 .body(response);
     }
 
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidCredentials(
+            InvalidCredentialsException ex,
+            HttpServletRequest request) {
+
+        ApiErrorResponse response = new ApiErrorResponse(
+                HttpStatus.UNAUTHORIZED.value(),
+                HttpStatus.UNAUTHORIZED.getReasonPhrase(),
+                ex.getMessage(),
+                LocalDateTime.now(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(response);
+    }
+
     @ExceptionHandler(InvalidTicketStatusTransitionException.class)
     public ResponseEntity<ApiErrorResponse> handleInvalidStatusTransition(
             InvalidTicketStatusTransitionException ex,
