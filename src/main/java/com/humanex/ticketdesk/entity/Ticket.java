@@ -61,16 +61,6 @@ public class Ticket {
     public Ticket(
             String title,
             String description,
-            TicketPriority priority) {
-
-        this.title = title;
-        this.description = description;
-        this.priority = priority;
-    }
-
-    public Ticket(
-            String title,
-            String description,
             TicketPriority priority,
             User requester) {
 

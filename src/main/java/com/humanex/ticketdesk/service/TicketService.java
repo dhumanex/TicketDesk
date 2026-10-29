@@ -62,21 +62,6 @@ public class TicketService {
     public Ticket create(
             String title,
             String description,
-            TicketPriority priority) {
-
-        Ticket ticket = new Ticket(
-                title,
-                description,
-                priority
-        );
-
-        return ticketRepository.save(ticket);
-    }
-
-    @Transactional
-    public Ticket create(
-            String title,
-            String description,
             TicketPriority priority,
             Long requesterId) {
 
@@ -155,11 +140,6 @@ public class TicketService {
         ticketStatusHistoryRepository.save(history);
 
         return ticket;
-    }
-
-    @Transactional
-    public void deleteById(Long id) {
-        ticketRepository.deleteById(id);
     }
 
     private boolean isValidStatusTransition(
