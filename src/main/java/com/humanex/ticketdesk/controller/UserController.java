@@ -82,6 +82,17 @@ public class UserController {
         );
     }
 
+    @PatchMapping("/{id}/enable")
+    public ResponseEntity<UserResponse> enable(
+            @PathVariable Long id) {
+
+        User user = userService.enable(id);
+
+        return ResponseEntity.ok(
+                toResponse(user)
+        );
+    }
+
     private UserResponse toResponse(User user) {
 
         return new UserResponse(

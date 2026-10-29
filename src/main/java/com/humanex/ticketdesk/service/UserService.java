@@ -77,4 +77,15 @@ public class UserService {
 
         return user;
     }
+
+    @Transactional
+    public User enable(Long id) {
+
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException(id));
+
+        user.enable();
+
+        return user;
+    }
 }
