@@ -4,6 +4,8 @@ import java.net.URI;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,6 +24,7 @@ import com.humanex.ticketdesk.entity.Ticket;
 import com.humanex.ticketdesk.entity.TicketStatusHistory;
 import com.humanex.ticketdesk.entity.User;
 import com.humanex.ticketdesk.service.TicketService;
+import com.humanex.ticketdesk.service.UserService;
 
 import jakarta.validation.Valid;
 
@@ -30,9 +33,14 @@ import jakarta.validation.Valid;
 public class TicketController {
 
     private final TicketService ticketService;
+    private final UserService userService;
 
-    public TicketController(TicketService ticketService) {
+    public TicketController(
+            TicketService ticketService,
+            UserService userService) {
+
         this.ticketService = ticketService;
+        this.userService = userService;
     }
 
     @GetMapping
@@ -67,13 +75,18 @@ public class TicketController {
 
     @PostMapping
     public ResponseEntity<TicketResponse> create(
-            @Valid @RequestBody CreateTicketRequest request) {
+            @Valid @RequestBody CreateTicketRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+
+        Long requesterId = userService
+                .findByEmail(jwt.getSubject())
+                .getId();
 
         Ticket ticket = ticketService.create(
                 request.title(),
                 request.description(),
                 request.priority(),
-                request.requesterId()
+                requesterId
         );
 
         TicketResponse response = toResponse(ticket);
