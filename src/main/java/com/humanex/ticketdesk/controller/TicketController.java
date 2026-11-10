@@ -44,9 +44,17 @@ public class TicketController {
     }
 
     @GetMapping
-    public List<TicketResponse> findAll() {
+    public List<TicketResponse> findAll(
+            @AuthenticationPrincipal Jwt jwt) {
 
-        return ticketService.findAll()
+        User authenticatedUser =
+                getAuthenticatedUser(jwt);
+
+        return ticketService
+                .findAllVisibleTo(
+                        authenticatedUser.getId(),
+                        authenticatedUser.getRole()
+                )
                 .stream()
                 .map(this::toResponse)
                 .toList();
@@ -54,9 +62,17 @@ public class TicketController {
 
     @GetMapping("/{id}")
     public ResponseEntity<TicketResponse> findById(
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            @AuthenticationPrincipal Jwt jwt) {
 
-        Ticket ticket = ticketService.findById(id);
+        User authenticatedUser =
+                getAuthenticatedUser(jwt);
+
+        Ticket ticket = ticketService.findByIdVisibleTo(
+                id,
+                authenticatedUser.getId(),
+                authenticatedUser.getRole()
+        );
 
         return ResponseEntity.ok(
                 toResponse(ticket)
@@ -65,9 +81,18 @@ public class TicketController {
 
     @GetMapping("/{id}/history")
     public List<TicketStatusHistoryResponse> findHistory(
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            @AuthenticationPrincipal Jwt jwt) {
 
-        return ticketService.findHistoryByTicketId(id)
+        User authenticatedUser =
+                getAuthenticatedUser(jwt);
+
+        return ticketService
+                .findHistoryVisibleTo(
+                        id,
+                        authenticatedUser.getId(),
+                        authenticatedUser.getRole()
+                )
                 .stream()
                 .map(this::toHistoryResponse)
                 .toList();
@@ -78,15 +103,14 @@ public class TicketController {
             @Valid @RequestBody CreateTicketRequest request,
             @AuthenticationPrincipal Jwt jwt) {
 
-        Long requesterId = userService
-                .findByEmail(jwt.getSubject())
-                .getId();
+        User authenticatedUser =
+                getAuthenticatedUser(jwt);
 
         Ticket ticket = ticketService.create(
                 request.title(),
                 request.description(),
                 request.priority(),
-                requesterId
+                authenticatedUser.getId()
         );
 
         TicketResponse response = toResponse(ticket);
@@ -127,6 +151,13 @@ public class TicketController {
 
         return ResponseEntity.ok(
                 toResponse(ticket)
+        );
+    }
+
+    private User getAuthenticatedUser(Jwt jwt) {
+
+        return userService.findByEmail(
+                jwt.getSubject()
         );
     }
 

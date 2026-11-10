@@ -42,17 +42,63 @@ public class TicketService {
         return ticketRepository.findAll();
     }
 
+    public List<Ticket> findAllVisibleTo(
+            Long userId,
+            UserRole role) {
+
+        if (role == UserRole.USER) {
+            return ticketRepository.findByRequester_Id(userId);
+        }
+
+        return ticketRepository.findAll();
+    }
+
     public Ticket findById(Long id) {
 
         return ticketRepository.findById(id)
-                .orElseThrow(() -> new TicketNotFoundException(id));
+                .orElseThrow(() ->
+                        new TicketNotFoundException(id)
+                );
     }
 
-    public List<TicketStatusHistory> findHistoryByTicketId(Long ticketId) {
+    public Ticket findByIdVisibleTo(
+            Long ticketId,
+            Long userId,
+            UserRole role) {
 
-        if (!ticketRepository.existsById(ticketId)) {
-            throw new TicketNotFoundException(ticketId);
+        if (role == UserRole.USER) {
+            return ticketRepository
+                    .findByIdAndRequester_Id(
+                            ticketId,
+                            userId
+                    )
+                    .orElseThrow(() ->
+                            new TicketNotFoundException(ticketId)
+                    );
         }
+
+        return findById(ticketId);
+    }
+
+    public List<TicketStatusHistory> findHistoryByTicketId(
+            Long ticketId) {
+
+        findById(ticketId);
+
+        return ticketStatusHistoryRepository
+                .findByTicket_IdOrderByChangedAtAsc(ticketId);
+    }
+
+    public List<TicketStatusHistory> findHistoryVisibleTo(
+            Long ticketId,
+            Long userId,
+            UserRole role) {
+
+        findByIdVisibleTo(
+                ticketId,
+                userId,
+                role
+        );
 
         return ticketStatusHistoryRepository
                 .findByTicket_IdOrderByChangedAtAsc(ticketId);
@@ -66,7 +112,9 @@ public class TicketService {
             Long requesterId) {
 
         User requester = userRepository.findById(requesterId)
-                .orElseThrow(() -> new UserNotFoundException(requesterId));
+                .orElseThrow(() ->
+                        new UserNotFoundException(requesterId)
+                );
 
         if (!requester.isEnabled()) {
             throw new UserDisabledException(
@@ -85,13 +133,19 @@ public class TicketService {
     }
 
     @Transactional
-    public Ticket assign(Long ticketId, Long assigneeId) {
+    public Ticket assign(
+            Long ticketId,
+            Long assigneeId) {
 
         Ticket ticket = ticketRepository.findById(ticketId)
-                .orElseThrow(() -> new TicketNotFoundException(ticketId));
+                .orElseThrow(() ->
+                        new TicketNotFoundException(ticketId)
+                );
 
         User assignee = userRepository.findById(assigneeId)
-                .orElseThrow(() -> new UserNotFoundException(assigneeId));
+                .orElseThrow(() ->
+                        new UserNotFoundException(assigneeId)
+                );
 
         if (assignee.getRole() != UserRole.TECHNICIAN) {
             throw new InvalidAssigneeRoleException(
@@ -117,11 +171,16 @@ public class TicketService {
             TicketStatus newStatus) {
 
         Ticket ticket = ticketRepository.findById(id)
-                .orElseThrow(() -> new TicketNotFoundException(id));
+                .orElseThrow(() ->
+                        new TicketNotFoundException(id)
+                );
 
         TicketStatus currentStatus = ticket.getStatus();
 
-        if (!isValidStatusTransition(currentStatus, newStatus)) {
+        if (!isValidStatusTransition(
+                currentStatus,
+                newStatus)) {
+
             throw new InvalidTicketStatusTransitionException(
                     id,
                     currentStatus,
@@ -129,11 +188,12 @@ public class TicketService {
             );
         }
 
-        TicketStatusHistory history = new TicketStatusHistory(
-                ticket,
-                currentStatus,
-                newStatus
-        );
+        TicketStatusHistory history =
+                new TicketStatusHistory(
+                        ticket,
+                        currentStatus,
+                        newStatus
+                );
 
         ticket.setStatus(newStatus);
 
@@ -147,17 +207,18 @@ public class TicketService {
             TicketStatus newStatus) {
 
         return switch (currentStatus) {
+
             case OPEN ->
-                newStatus == TicketStatus.IN_PROGRESS;
+                    newStatus == TicketStatus.IN_PROGRESS;
 
             case IN_PROGRESS ->
-                newStatus == TicketStatus.RESOLVED;
+                    newStatus == TicketStatus.RESOLVED;
 
             case RESOLVED ->
-                newStatus == TicketStatus.CLOSED;
+                    newStatus == TicketStatus.CLOSED;
 
             case CLOSED ->
-                false;
+                    false;
         };
     }
 }

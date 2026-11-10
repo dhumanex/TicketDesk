@@ -8,18 +8,22 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.humanex.ticketdesk.entity.Ticket;
 
-public interface TicketRepository
-        extends JpaRepository<Ticket, Long> {
+public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
-    @EntityGraph(attributePaths = {
-            "requester",
-            "assignee"
-    })
+    @Override
+    @EntityGraph(attributePaths = {"requester", "assignee"})
     List<Ticket> findAll();
 
-    @EntityGraph(attributePaths = {
-            "requester",
-            "assignee"
-    })
+    @Override
+    @EntityGraph(attributePaths = {"requester", "assignee"})
     Optional<Ticket> findById(Long id);
+
+    @EntityGraph(attributePaths = {"requester", "assignee"})
+    List<Ticket> findByRequester_Id(Long requesterId);
+
+    @EntityGraph(attributePaths = {"requester", "assignee"})
+    Optional<Ticket> findByIdAndRequester_Id(
+            Long ticketId,
+            Long requesterId
+    );
 }
