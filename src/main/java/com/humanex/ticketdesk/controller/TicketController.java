@@ -127,11 +127,17 @@ public class TicketController {
     @PatchMapping("/{id}/assignee")
     public ResponseEntity<TicketResponse> assign(
             @PathVariable Long id,
-            @Valid @RequestBody AssignTicketRequest request) {
+            @Valid @RequestBody AssignTicketRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
 
-        Ticket ticket = ticketService.assign(
+        User authenticatedUser =
+                getAuthenticatedUser(jwt);
+
+        Ticket ticket = ticketService.assignAuthorized(
                 id,
-                request.assigneeId()
+                request.assigneeId(),
+                authenticatedUser.getId(),
+                authenticatedUser.getRole()
         );
 
         return ResponseEntity.ok(
@@ -142,11 +148,17 @@ public class TicketController {
     @PatchMapping("/{id}/status")
     public ResponseEntity<TicketResponse> updateStatus(
             @PathVariable Long id,
-            @Valid @RequestBody UpdateTicketStatusRequest request) {
+            @Valid @RequestBody UpdateTicketStatusRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
 
-        Ticket ticket = ticketService.updateStatus(
+        User authenticatedUser =
+                getAuthenticatedUser(jwt);
+
+        Ticket ticket = ticketService.updateStatusAuthorized(
                 id,
-                request.status()
+                request.status(),
+                authenticatedUser.getId(),
+                authenticatedUser.getRole()
         );
 
         return ResponseEntity.ok(

@@ -80,6 +80,24 @@ public class GlobalExceptionHandler {
                 .body(response);
     }
 
+    @ExceptionHandler(TicketOperationForbiddenException.class)
+    public ResponseEntity<ApiErrorResponse> handleTicketOperationForbidden(
+            TicketOperationForbiddenException ex,
+            HttpServletRequest request) {
+
+        ApiErrorResponse response = new ApiErrorResponse(
+                HttpStatus.FORBIDDEN.value(),
+                HttpStatus.FORBIDDEN.getReasonPhrase(),
+                ex.getMessage(),
+                LocalDateTime.now(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(response);
+    }
+
     @ExceptionHandler(InvalidTicketStatusTransitionException.class)
     public ResponseEntity<ApiErrorResponse> handleInvalidStatusTransition(
             InvalidTicketStatusTransitionException ex,

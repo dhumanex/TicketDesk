@@ -14,6 +14,7 @@ import com.humanex.ticketdesk.enums.UserRole;
 import com.humanex.ticketdesk.exception.InvalidAssigneeRoleException;
 import com.humanex.ticketdesk.exception.InvalidTicketStatusTransitionException;
 import com.humanex.ticketdesk.exception.TicketNotFoundException;
+import com.humanex.ticketdesk.exception.TicketOperationForbiddenException;
 import com.humanex.ticketdesk.exception.UserDisabledException;
 import com.humanex.ticketdesk.exception.UserNotFoundException;
 import com.humanex.ticketdesk.repository.TicketRepository;
@@ -137,15 +138,113 @@ public class TicketService {
             Long ticketId,
             Long assigneeId) {
 
-        Ticket ticket = ticketRepository.findById(ticketId)
-                .orElseThrow(() ->
-                        new TicketNotFoundException(ticketId)
-                );
+        Ticket ticket = findById(ticketId);
 
         User assignee = userRepository.findById(assigneeId)
                 .orElseThrow(() ->
                         new UserNotFoundException(assigneeId)
                 );
+
+        validateAssignee(assignee);
+
+        ticket.assignTo(assignee);
+
+        return ticket;
+    }
+
+    @Transactional
+    public Ticket assignAuthorized(
+            Long ticketId,
+            Long assigneeId,
+            Long actorUserId,
+            UserRole actorRole) {
+
+        if (actorRole == UserRole.ADMIN) {
+            return assign(ticketId, assigneeId);
+        }
+
+        if (actorRole != UserRole.TECHNICIAN) {
+            throw new TicketOperationForbiddenException(
+                    "No tienes permiso para asignar este ticket."
+            );
+        }
+
+        Ticket ticket = findById(ticketId);
+
+        if (!actorUserId.equals(assigneeId)) {
+            throw new TicketOperationForbiddenException(
+                    "Un técnico solo puede asignarse un ticket a sí mismo."
+            );
+        }
+
+        if (ticket.getAssignee() != null
+                && !ticket.getAssignee().getId().equals(actorUserId)) {
+
+            throw new TicketOperationForbiddenException(
+                    "El ticket ya está asignado a otro técnico."
+            );
+        }
+
+        User assignee = userRepository.findById(assigneeId)
+                .orElseThrow(() ->
+                        new UserNotFoundException(assigneeId)
+                );
+
+        validateAssignee(assignee);
+
+        ticket.assignTo(assignee);
+
+        return ticket;
+    }
+
+    @Transactional
+    public Ticket updateStatus(
+            Long id,
+            TicketStatus newStatus) {
+
+        Ticket ticket = findById(id);
+
+        return updateStatusInternal(
+                ticket,
+                newStatus
+        );
+    }
+
+    @Transactional
+    public Ticket updateStatusAuthorized(
+            Long ticketId,
+            TicketStatus newStatus,
+            Long actorUserId,
+            UserRole actorRole) {
+
+        Ticket ticket = findById(ticketId);
+
+        if (actorRole == UserRole.TECHNICIAN) {
+
+            if (ticket.getAssignee() == null
+                    || !ticket.getAssignee()
+                            .getId()
+                            .equals(actorUserId)) {
+
+                throw new TicketOperationForbiddenException(
+                        "Solo puedes cambiar el estado de tickets asignados a ti."
+                );
+            }
+
+        } else if (actorRole != UserRole.ADMIN) {
+
+            throw new TicketOperationForbiddenException(
+                    "No tienes permiso para cambiar el estado de este ticket."
+            );
+        }
+
+        return updateStatusInternal(
+                ticket,
+                newStatus
+        );
+    }
+
+    private void validateAssignee(User assignee) {
 
         if (assignee.getRole() != UserRole.TECHNICIAN) {
             throw new InvalidAssigneeRoleException(
@@ -159,21 +258,11 @@ public class TicketService {
                     assignee.getId()
             );
         }
-
-        ticket.assignTo(assignee);
-
-        return ticket;
     }
 
-    @Transactional
-    public Ticket updateStatus(
-            Long id,
+    private Ticket updateStatusInternal(
+            Ticket ticket,
             TicketStatus newStatus) {
-
-        Ticket ticket = ticketRepository.findById(id)
-                .orElseThrow(() ->
-                        new TicketNotFoundException(id)
-                );
 
         TicketStatus currentStatus = ticket.getStatus();
 
@@ -182,7 +271,7 @@ public class TicketService {
                 newStatus)) {
 
             throw new InvalidTicketStatusTransitionException(
-                    id,
+                    ticket.getId(),
                     currentStatus,
                     newStatus
             );
