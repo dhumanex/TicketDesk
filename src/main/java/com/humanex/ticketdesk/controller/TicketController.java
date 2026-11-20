@@ -3,6 +3,10 @@ package com.humanex.ticketdesk.controller;
 import java.net.URI;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -12,10 +16,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.humanex.ticketdesk.dto.AssignTicketRequest;
 import com.humanex.ticketdesk.dto.CreateTicketRequest;
+import com.humanex.ticketdesk.dto.PageResponse;
 import com.humanex.ticketdesk.dto.TicketResponse;
 import com.humanex.ticketdesk.dto.TicketStatusHistoryResponse;
 import com.humanex.ticketdesk.dto.UpdateTicketStatusRequest;
@@ -23,6 +29,8 @@ import com.humanex.ticketdesk.dto.UserSummaryResponse;
 import com.humanex.ticketdesk.entity.Ticket;
 import com.humanex.ticketdesk.entity.TicketStatusHistory;
 import com.humanex.ticketdesk.entity.User;
+import com.humanex.ticketdesk.enums.TicketPriority;
+import com.humanex.ticketdesk.enums.TicketStatus;
 import com.humanex.ticketdesk.service.TicketService;
 import com.humanex.ticketdesk.service.UserService;
 
@@ -44,20 +52,47 @@ public class TicketController {
     }
 
     @GetMapping
-    public List<TicketResponse> findAll(
-            @AuthenticationPrincipal Jwt jwt) {
+    public PageResponse<TicketResponse> findAll(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam(required = false)
+            TicketStatus status,
+            @RequestParam(required = false)
+            TicketPriority priority,
+            @PageableDefault(
+                    page = 0,
+                    size = 10,
+                    sort = "createdAt",
+                    direction = Sort.Direction.DESC
+            )
+            Pageable pageable) {
 
         User authenticatedUser =
                 getAuthenticatedUser(jwt);
 
-        return ticketService
-                .findAllVisibleTo(
+        Page<Ticket> ticketPage =
+                ticketService.findAllVisibleTo(
                         authenticatedUser.getId(),
-                        authenticatedUser.getRole()
-                )
-                .stream()
-                .map(this::toResponse)
-                .toList();
+                        authenticatedUser.getRole(),
+                        status,
+                        priority,
+                        pageable
+                );
+
+        List<TicketResponse> content =
+                ticketPage.getContent()
+                        .stream()
+                        .map(this::toResponse)
+                        .toList();
+
+        return new PageResponse<>(
+                content,
+                ticketPage.getNumber(),
+                ticketPage.getSize(),
+                ticketPage.getTotalElements(),
+                ticketPage.getTotalPages(),
+                ticketPage.isFirst(),
+                ticketPage.isLast()
+        );
     }
 
     @GetMapping("/{id}")

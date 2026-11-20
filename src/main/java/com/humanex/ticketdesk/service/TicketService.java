@@ -2,6 +2,9 @@ package com.humanex.ticketdesk.service;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +23,7 @@ import com.humanex.ticketdesk.exception.UserNotFoundException;
 import com.humanex.ticketdesk.repository.TicketRepository;
 import com.humanex.ticketdesk.repository.TicketStatusHistoryRepository;
 import com.humanex.ticketdesk.repository.UserRepository;
+import com.humanex.ticketdesk.specification.TicketSpecifications;
 
 @Service
 @Transactional(readOnly = true)
@@ -52,6 +56,47 @@ public class TicketService {
         }
 
         return ticketRepository.findAll();
+    }
+
+    public Page<Ticket> findAllVisibleTo(
+            Long userId,
+            UserRole role,
+            Pageable pageable) {
+
+        return findAllVisibleTo(
+                userId,
+                role,
+                null,
+                null,
+                pageable
+        );
+    }
+
+    public Page<Ticket> findAllVisibleTo(
+            Long userId,
+            UserRole role,
+            TicketStatus status,
+            TicketPriority priority,
+            Pageable pageable) {
+
+        Specification<Ticket> specification =
+                TicketSpecifications
+                        .hasStatus(status)
+                        .and(
+                                TicketSpecifications
+                                        .hasPriority(priority)
+                        );
+
+        if (role == UserRole.USER) {
+            specification = specification.and(
+                    TicketSpecifications.hasRequesterId(userId)
+            );
+        }
+
+        return ticketRepository.findAll(
+                specification,
+                pageable
+        );
     }
 
     public Ticket findById(Long id) {
