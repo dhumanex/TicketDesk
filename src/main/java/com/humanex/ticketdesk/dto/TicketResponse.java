@@ -13,7 +13,7 @@ public record TicketResponse(
         TicketPriority priority,
         UserSummaryResponse requester,
         UserSummaryResponse assignee,
+        LocalDateTime slaDueAt,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
-) {
-}
+) {}

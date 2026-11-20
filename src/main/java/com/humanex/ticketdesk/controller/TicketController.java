@@ -46,7 +46,6 @@ public class TicketController {
     public TicketController(
             TicketService ticketService,
             UserService userService) {
-
         this.ticketService = ticketService;
         this.userService = userService;
     }
@@ -54,20 +53,16 @@ public class TicketController {
     @GetMapping
     public PageResponse<TicketResponse> findAll(
             @AuthenticationPrincipal Jwt jwt,
-            @RequestParam(required = false)
-            TicketStatus status,
-            @RequestParam(required = false)
-            TicketPriority priority,
+            @RequestParam(required = false) TicketStatus status,
+            @RequestParam(required = false) TicketPriority priority,
             @PageableDefault(
                     page = 0,
                     size = 10,
                     sort = "createdAt",
                     direction = Sort.Direction.DESC
-            )
-            Pageable pageable) {
+            ) Pageable pageable) {
 
-        User authenticatedUser =
-                getAuthenticatedUser(jwt);
+        User authenticatedUser = getAuthenticatedUser(jwt);
 
         Page<Ticket> ticketPage =
                 ticketService.findAllVisibleTo(
@@ -100,14 +95,14 @@ public class TicketController {
             @PathVariable Long id,
             @AuthenticationPrincipal Jwt jwt) {
 
-        User authenticatedUser =
-                getAuthenticatedUser(jwt);
+        User authenticatedUser = getAuthenticatedUser(jwt);
 
-        Ticket ticket = ticketService.findByIdVisibleTo(
-                id,
-                authenticatedUser.getId(),
-                authenticatedUser.getRole()
-        );
+        Ticket ticket =
+                ticketService.findByIdVisibleTo(
+                        id,
+                        authenticatedUser.getId(),
+                        authenticatedUser.getRole()
+                );
 
         return ResponseEntity.ok(
                 toResponse(ticket)
@@ -119,11 +114,9 @@ public class TicketController {
             @PathVariable Long id,
             @AuthenticationPrincipal Jwt jwt) {
 
-        User authenticatedUser =
-                getAuthenticatedUser(jwt);
+        User authenticatedUser = getAuthenticatedUser(jwt);
 
-        return ticketService
-                .findHistoryVisibleTo(
+        return ticketService.findHistoryVisibleTo(
                         id,
                         authenticatedUser.getId(),
                         authenticatedUser.getRole()
@@ -138,21 +131,22 @@ public class TicketController {
             @Valid @RequestBody CreateTicketRequest request,
             @AuthenticationPrincipal Jwt jwt) {
 
-        User authenticatedUser =
-                getAuthenticatedUser(jwt);
+        User authenticatedUser = getAuthenticatedUser(jwt);
 
-        Ticket ticket = ticketService.create(
-                request.title(),
-                request.description(),
-                request.priority(),
-                authenticatedUser.getId()
-        );
+        Ticket ticket =
+                ticketService.create(
+                        request.title(),
+                        request.description(),
+                        request.priority(),
+                        authenticatedUser.getId()
+                );
 
         TicketResponse response = toResponse(ticket);
 
-        URI location = URI.create(
-                "/api/tickets/" + response.id()
-        );
+        URI location =
+                URI.create(
+                        "/api/tickets/" + response.id()
+                );
 
         return ResponseEntity
                 .created(location)
@@ -165,15 +159,15 @@ public class TicketController {
             @Valid @RequestBody AssignTicketRequest request,
             @AuthenticationPrincipal Jwt jwt) {
 
-        User authenticatedUser =
-                getAuthenticatedUser(jwt);
+        User authenticatedUser = getAuthenticatedUser(jwt);
 
-        Ticket ticket = ticketService.assignAuthorized(
-                id,
-                request.assigneeId(),
-                authenticatedUser.getId(),
-                authenticatedUser.getRole()
-        );
+        Ticket ticket =
+                ticketService.assignAuthorized(
+                        id,
+                        request.assigneeId(),
+                        authenticatedUser.getId(),
+                        authenticatedUser.getRole()
+                );
 
         return ResponseEntity.ok(
                 toResponse(ticket)
@@ -186,15 +180,15 @@ public class TicketController {
             @Valid @RequestBody UpdateTicketStatusRequest request,
             @AuthenticationPrincipal Jwt jwt) {
 
-        User authenticatedUser =
-                getAuthenticatedUser(jwt);
+        User authenticatedUser = getAuthenticatedUser(jwt);
 
-        Ticket ticket = ticketService.updateStatusAuthorized(
-                id,
-                request.status(),
-                authenticatedUser.getId(),
-                authenticatedUser.getRole()
-        );
+        Ticket ticket =
+                ticketService.updateStatusAuthorized(
+                        id,
+                        request.status(),
+                        authenticatedUser.getId(),
+                        authenticatedUser.getRole()
+                );
 
         return ResponseEntity.ok(
                 toResponse(ticket)
@@ -202,13 +196,13 @@ public class TicketController {
     }
 
     private User getAuthenticatedUser(Jwt jwt) {
-
         return userService.findByEmail(
                 jwt.getSubject()
         );
     }
 
-    private TicketResponse toResponse(Ticket ticket) {
+    private TicketResponse toResponse(
+            Ticket ticket) {
 
         return new TicketResponse(
                 ticket.getId(),
@@ -216,14 +210,20 @@ public class TicketController {
                 ticket.getDescription(),
                 ticket.getStatus(),
                 ticket.getPriority(),
-                toUserSummary(ticket.getRequester()),
-                toUserSummary(ticket.getAssignee()),
+                toUserSummary(
+                        ticket.getRequester()
+                ),
+                toUserSummary(
+                        ticket.getAssignee()
+                ),
+                ticket.getSlaDueAt(),
                 ticket.getCreatedAt(),
                 ticket.getUpdatedAt()
         );
     }
 
-    private UserSummaryResponse toUserSummary(User user) {
+    private UserSummaryResponse toUserSummary(
+            User user) {
 
         if (user == null) {
             return null;
@@ -237,8 +237,9 @@ public class TicketController {
         );
     }
 
-    private TicketStatusHistoryResponse toHistoryResponse(
-            TicketStatusHistory history) {
+    private TicketStatusHistoryResponse
+            toHistoryResponse(
+                    TicketStatusHistory history) {
 
         return new TicketStatusHistoryResponse(
                 history.getId(),

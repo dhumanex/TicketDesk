@@ -1,0 +1,2 @@
+ALTER TABLE tickets
+ADD COLUMN sla_due_at TIMESTAMP;

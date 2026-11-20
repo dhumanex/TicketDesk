@@ -49,6 +49,9 @@ public class Ticket {
     @JoinColumn(name = "assignee_id")
     private User assignee;
 
+    @Column(name = "sla_due_at")
+    private LocalDateTime slaDueAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -83,11 +86,42 @@ public class Ticket {
 
         createdAt = LocalDateTime.now();
         updatedAt = createdAt;
+        slaDueAt = calculateSlaDueAt(createdAt, priority);
     }
 
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    private LocalDateTime calculateSlaDueAt(
+            LocalDateTime creationTime,
+            TicketPriority priority) {
+
+        return switch (priority) {
+            case CRITICAL -> creationTime.plusHours(4);
+            case HIGH -> creationTime.plusHours(8);
+            case MEDIUM -> creationTime.plusHours(24);
+            case LOW -> creationTime.plusHours(48);
+        };
+    }
+
+    public boolean isSlaBreached() {
+        return isSlaBreachedAt(LocalDateTime.now());
+    }
+
+    boolean isSlaBreachedAt(LocalDateTime currentTime) {
+
+        if (slaDueAt == null) {
+            return false;
+        }
+
+        if (status == TicketStatus.RESOLVED
+                || status == TicketStatus.CLOSED) {
+            return false;
+        }
+
+        return currentTime.isAfter(slaDueAt);
     }
 
     public void assignTo(User assignee) {
@@ -136,6 +170,10 @@ public class Ticket {
 
     public User getAssignee() {
         return assignee;
+    }
+
+    public LocalDateTime getSlaDueAt() {
+        return slaDueAt;
     }
 
     public LocalDateTime getCreatedAt() {
